@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "buildCommand": "cd ticketmoa-client && npm install && npm run build",
+  "outputDirectory": "ticketmoa-client/dist",
+  "installCommand": "cd ticketmoa-server && npm install",
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "@vercel/node@4"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
