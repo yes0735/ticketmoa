@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const { performances: sampleData, categories } = require('./data/performances');
@@ -192,7 +193,14 @@ function serveSampleList(req, res) {
   res.json(result);
 }
 
+// Production: 빌드된 React 앱 서빙
+const clientDist = path.join(__dirname, '..', 'ticketmoa-client', 'dist');
+app.use(express.static(clientDist));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientDist, 'index.html'));
+});
+
 app.listen(PORT, () => {
-  console.log(`TicketMoa API running on http://localhost:${PORT}`);
+  console.log(`TicketMoa running on http://localhost:${PORT}`);
   console.log(`Data source: ${USE_DB ? 'PostgreSQL' : 'Sample Data (DATABASE_URL 미설정)'}`);
 });

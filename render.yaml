@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: ticketmoa
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "5000"
+      - key: KOPIS_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
