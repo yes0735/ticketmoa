@@ -1,0 +1,15 @@
+{
+  "name": "ticketmoa",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npm run dev:server & npm run dev:client",
+    "dev:client": "cd ticketmoa-client && npm run dev",
+    "dev:server": "cd ticketmoa-server && npm run dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
