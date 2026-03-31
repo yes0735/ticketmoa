@@ -4,6 +4,8 @@
 
 PDCA Team 프로젝트로 개발되었으며, [KOPIS(공연예술통합전산망)](http://www.kopis.or.kr) Open API를 활용하여 실시간 공연 데이터를 수집합니다.
 
+**Live Demo:** [https://project-two-zeta-40.vercel.app](https://project-two-zeta-40.vercel.app)
+
 ---
 
 ## Screenshots
@@ -49,17 +51,22 @@ PDCA Team 프로젝트로 개발되었으며, [KOPIS(공연예술통합전산망
 │                        │                                │
 └────────────────────────┼────────────────────────────────┘
                          │
-            ┌────────────▼────────────┐
-            │  ticketmoa-server       │
-            │  (Express API)          │
-            │  DB > Sample 폴백       │
-            └────────────┬────────────┘
-                         │ /api/*
-            ┌────────────▼────────────┐
-            │  ticketmoa-client       │
-            │  (React + Vite)         │
-            │  Mobile-First UI        │
-            └─────────────────────────┘
+┌────────────────────────┼────────────────────────────────┐
+│                    Vercel                               │
+│                        │                                │
+│  ┌─────────────────────▼───────────────────────┐        │
+│  │  Serverless Functions (/api/*)              │        │
+│  │  ticketmoa-server (Express API)             │        │
+│  │  DB > Sample Data 폴백                      │        │
+│  └─────────────────────┬───────────────────────┘        │
+│                        │                                │
+│  ┌─────────────────────▼───────────────────────┐        │
+│  │  Static Hosting                             │        │
+│  │  ticketmoa-client (React + Vite)            │        │
+│  │  Mobile-First UI                            │        │
+│  └─────────────────────────────────────────────┘        │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -86,7 +93,9 @@ PDCA Team 프로젝트로 개발되었으며, [KOPIS(공연예술통합전산망
 ### Infra / DevOps
 | 기술 | 설명 |
 |------|------|
+| **Vercel** | 프론트엔드 호스팅 + Serverless Functions |
 | **GitHub Actions** | 배치 스케줄러 (cron) |
+| **PostgreSQL** | 공연 데이터 저장 |
 | **KOPIS Open API** | 공연예술통합전산망 데이터 소스 |
 
 ---
@@ -123,7 +132,11 @@ project/
 │   │   └── performances.js         # 샘플 데이터 (폴백용)
 │   ├── index.js                    # Express API 서버
 │   └── .env                        # 환경변수 (git 제외)
+├── api/
+│   └── index.js                    # Vercel Serverless Function
 ├── docs/screenshots/               # README 스크린샷
+├── vercel.json                     # Vercel 배포 설정
+├── render.yaml                     # Render 배포 설정 (대체 옵션)
 ├── package.json
 ├── .gitignore
 └── README.md
@@ -188,6 +201,26 @@ npm run sync             # KOPIS 데이터 동기화
 | `status` | 공연 상태 | `on_sale`, `upcoming` |
 | `search` | 키워드 검색 | `IU`, `레미제라블` |
 | `sort` | 정렬 | `date`, `popularity` |
+
+---
+
+## 배포
+
+### Vercel (현재 사용 중)
+
+Vercel CLI로 배포:
+
+```bash
+vercel --prod
+```
+
+- **프론트엔드:** Vite 빌드 후 Static Hosting
+- **백엔드 API:** `/api/index.js` Serverless Function
+- **Live:** [https://project-two-zeta-40.vercel.app](https://project-two-zeta-40.vercel.app)
+
+### Render (대체 옵션)
+
+`render.yaml` 설정으로 Web Service 배포 가능.
 
 ---
 
