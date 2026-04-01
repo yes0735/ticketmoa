@@ -4,7 +4,7 @@
 
 PDCA Team 프로젝트로 개발되었으며, [KOPIS(공연예술통합전산망)](http://www.kopis.or.kr) Open API를 활용하여 실시간 공연 데이터를 수집합니다.
 
-**Live Demo:** [https://project-two-zeta-40.vercel.app](https://project-two-zeta-40.vercel.app)
+**Live Demo:** [https://ticketmoa-two-zeta-40.vercel.app](https://ticketmoa-two-zeta-40.vercel.app)
 
 ---
 
@@ -216,7 +216,7 @@ vercel --prod
 
 - **프론트엔드:** Vite 빌드 후 Static Hosting
 - **백엔드 API:** `/api/index.js` Serverless Function
-- **Live:** [https://project-two-zeta-40.vercel.app](https://project-two-zeta-40.vercel.app)
+- **Live:** [https://ticketmoa-two-zeta-40.vercel.app](https://ticketmoa-two-zeta-40.vercel.app)
 
 ### Render (대체 옵션)
 

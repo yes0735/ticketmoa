@@ -294,10 +294,12 @@ const performances = [
 ];
 
 const categories = [
-  { id: 'musical', name: '뮤지컬', icon: '🎭', color: '#e74c3c' },
-  { id: 'concert', name: '콘서트', icon: '🎤', color: '#3498db' },
-  { id: 'theater', name: '연극', icon: '🎪', color: '#2ecc71' },
-  { id: 'classic', name: '클래식/오페라', icon: '🎻', color: '#9b59b6' },
+  { id: 'musical', name: '뮤지컬', icon: '🎭', color: '#111111' },
+  { id: 'concert', name: '대중음악', icon: '🎤', color: '#333333' },
+  { id: 'theater', name: '연극', icon: '🎪', color: '#555555' },
+  { id: 'classic', name: '서양음악(클래식)', icon: '🎻', color: '#222222' },
+  { id: 'dance', name: '무용', icon: '💃', color: '#444444' },
+  { id: 'etc', name: '서커스/복합', icon: '🎪', color: '#777777' },
 ];
 
 module.exports = { performances, categories };

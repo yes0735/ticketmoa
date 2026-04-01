@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PerformanceCard from '../components/PerformanceCard';
 
@@ -6,11 +6,21 @@ function HomePage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [categories, setCategories] = useState([]);
-  const [performances, setPerformances] = useState([]);
+  const [onSale, setOnSale] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
+  const scrollRef = useRef(null);
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const scrollStartLeft = useRef(0);
+  const hasMoved = useRef(false);
+  const lastPageX = useRef(0);
+  const velocity = useRef(0);
+  const momentumId = useRef(null);
 
   useEffect(() => {
     fetch('/api/categories').then((r) => r.json()).then(setCategories);
-    fetch('/api/performances?sort=date').then((r) => r.json()).then(setPerformances);
+    fetch('/api/performances?status=on_sale&sort=date&limit=10').then((r) => r.json()).then(setOnSale);
+    fetch('/api/performances?status=upcoming&sort=date&limit=10').then((r) => r.json()).then(setUpcoming);
   }, []);
 
   const handleSearch = (e) => {
@@ -20,8 +30,81 @@ function HomePage() {
     }
   };
 
-  const onSale = performances.filter((p) => p.status === 'on_sale');
-  const upcoming = performances.filter((p) => p.status === 'upcoming');
+  // 화살표: 카드 1개 너비만큼 스크롤
+  const scrollBy = useCallback((direction) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const card = el.querySelector('.hot-card');
+    if (!card) return;
+    const cardWidth = card.offsetWidth + 12; // gap 포함
+    el.scrollBy({ left: direction * cardWidth, behavior: 'smooth' });
+  }, []);
+
+  // 마우스 드래그 스크롤
+  const stopMomentum = () => {
+    if (momentumId.current) {
+      cancelAnimationFrame(momentumId.current);
+      momentumId.current = null;
+    }
+  };
+
+  const startMomentum = () => {
+    const el = scrollRef.current;
+    if (!el || Math.abs(velocity.current) < 0.5) return;
+
+    const step = () => {
+      velocity.current *= 0.95; // 감속
+      el.scrollLeft += velocity.current;
+      if (Math.abs(velocity.current) > 0.5) {
+        momentumId.current = requestAnimationFrame(step);
+      }
+    };
+    momentumId.current = requestAnimationFrame(step);
+  };
+
+  const onMouseDown = (e) => {
+    stopMomentum();
+    isDragging.current = true;
+    hasMoved.current = false;
+    dragStartX.current = e.pageX;
+    lastPageX.current = e.pageX;
+    scrollStartLeft.current = scrollRef.current.scrollLeft;
+    velocity.current = 0;
+    scrollRef.current.style.cursor = 'grabbing';
+  };
+
+  const onMouseMove = (e) => {
+    if (!isDragging.current) return;
+    e.preventDefault();
+    const dx = e.pageX - dragStartX.current;
+    if (Math.abs(dx) > 5) hasMoved.current = true;
+    velocity.current = lastPageX.current - e.pageX;
+    lastPageX.current = e.pageX;
+    scrollRef.current.scrollLeft = scrollStartLeft.current - dx;
+  };
+
+  const onMouseUp = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    if (scrollRef.current) scrollRef.current.style.cursor = 'grab';
+    startMomentum();
+  };
+
+  useEffect(() => {
+    document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('mousemove', onMouseMove);
+    return () => {
+      document.removeEventListener('mouseup', onMouseUp);
+      document.removeEventListener('mousemove', onMouseMove);
+      stopMomentum();
+    };
+  }, []);
+
+  const handleCardClick = (title) => {
+    // 드래그 중이면 클릭 무시
+    if (hasMoved.current) return;
+    navigate(`/performances?search=${encodeURIComponent(title)}`);
+  };
 
   return (
     <>
@@ -54,7 +137,7 @@ function HomePage() {
         ))}
       </div>
 
-      {/* 오픈 예정 - 가로 스크롤 */}
+      {/* 오픈 예정 */}
       {upcoming.length > 0 && (
         <section className="section">
           <div className="section-header">
@@ -63,22 +146,41 @@ function HomePage() {
               전체보기 &rsaquo;
             </Link>
           </div>
-          <div className="hot-scroll">
-            {upcoming.map((p) => (
-              <div
-                key={p.id}
-                className="hot-card"
-                onClick={() => navigate(`/performances?search=${encodeURIComponent(p.title)}`)}
-              >
-                <div className="img-wrap">
-                  <img className="hot-card-img" src={p.thumbnail} alt={p.title} />
-                  <span className="hot-card-badge">오픈예정</span>
+          <div className="upcoming-carousel">
+            <button
+              className="carousel-arrow carousel-arrow-left"
+              onClick={() => scrollBy(-1)}
+            >
+              &#8249;
+            </button>
+            <div
+              className="upcoming-grid"
+              ref={scrollRef}
+              onMouseDown={onMouseDown}
+              style={{ cursor: 'grab' }}
+            >
+              {upcoming.map((p) => (
+                <div
+                  key={p.id}
+                  className="hot-card"
+                  onClick={() => handleCardClick(p.title)}
+                >
+                  <div className="img-wrap">
+                    <img className="hot-card-img" src={p.thumbnail} alt={p.title} draggable={false} />
+                    <span className="hot-card-badge">오픈예정</span>
+                  </div>
+                  <p className="hot-card-title">{p.title}</p>
+                  <p className="hot-card-sub">{p.venue}</p>
+                  <p className="hot-card-date">{p.startDate}~</p>
                 </div>
-                <p className="hot-card-title">{p.title}</p>
-                <p className="hot-card-sub">{p.venue}</p>
-                <p className="hot-card-date">{p.startDate}~</p>
-              </div>
-            ))}
+              ))}
+            </div>
+            <button
+              className="carousel-arrow carousel-arrow-right"
+              onClick={() => scrollBy(1)}
+            >
+              &#8250;
+            </button>
           </div>
         </section>
       )}
@@ -92,8 +194,8 @@ function HomePage() {
               전체보기 &rsaquo;
             </Link>
           </div>
-          <div className="perf-list">
-            {onSale.slice(0, 4).map((p) => (
+          <div className="perf-list home-perf-list">
+            {onSale.slice(0, 10).map((p) => (
               <PerformanceCard key={p.id} performance={p} />
             ))}
           </div>

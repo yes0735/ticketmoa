@@ -52,23 +52,21 @@ function parsePrice(pcseguidance) {
 }
 
 function buildTicketSources(row) {
-  const sources = [];
+  // KOPIS에서 가져온 실제 예매처 정보가 있으면 사용
+  if (row.relates) {
+    const relates = typeof row.relates === 'string' ? JSON.parse(row.relates) : row.relates;
+    if (Array.isArray(relates) && relates.length > 0) {
+      return relates.map((r) => ({ name: r.name, url: r.url }));
+    }
+  }
+
+  // fallback: 검색 링크
   const title = encodeURIComponent(row.prfnm || '');
-
-  sources.push({
-    name: '인터파크',
-    url: `https://tickets.interpark.com/search?keyword=${title}`,
-  });
-  sources.push({
-    name: 'YES24',
-    url: `https://ticket.yes24.com/search/search.aspx?query=${title}`,
-  });
-  sources.push({
-    name: '멜론티켓',
-    url: `https://ticket.melon.com/search/index.htm?q=${title}`,
-  });
-
-  return sources;
+  return [
+    { name: '놀유니버스', url: `https://www.globalinterpark.com/search?keyword=${title}` },
+    { name: '예스24', url: `https://ticket.yes24.com/search/search.aspx?query=${title}` },
+    { name: '멜론티켓', url: `https://ticket.melon.com/search/index.htm?q=${title}` },
+  ];
 }
 
 // =============================================
@@ -89,19 +87,48 @@ app.get('/api/categories', (req, res) => {
   res.json(categories);
 });
 
+// 예매처 목록 (DB에서 동적 조회)
+app.get('/api/ticket-sources', async (req, res) => {
+  if (USE_DB) {
+    try {
+      const { rows } = await db.query(
+        `SELECT name, COUNT(*) as cnt FROM (
+          SELECT jsonb_array_elements(relates)->>'name' AS name
+          FROM performances
+          WHERE relates IS NOT NULL AND relates != '[]'::jsonb
+        ) t
+        WHERE name IS NOT NULL AND TRIM(name) != ''
+        GROUP BY name ORDER BY cnt DESC`
+      );
+      res.json(rows.map((r) => ({ id: r.name, name: r.name, count: parseInt(r.cnt) })));
+    } catch (err) {
+      console.error('ticket-sources error:', err.message);
+      res.json([]);
+    }
+  } else {
+    res.json([]);
+  }
+});
+
 // 공연 목록
 app.get('/api/performances', async (req, res) => {
   if (USE_DB) {
     try {
-      const { category, search, status, sort, page = 1, limit = 50 } = req.query;
+      const { category, search, status, sort, page = 1, limit = 50, ticketSource } = req.query;
 
       let sql = 'SELECT * FROM performances WHERE 1=1';
       const params = [];
       let paramIdx = 1;
 
       if (category) {
-        sql += ` AND category = $${paramIdx++}`;
-        params.push(category);
+        const cats = category.split(',');
+        if (cats.length === 1) {
+          sql += ` AND category = $${paramIdx++}`;
+          params.push(cats[0]);
+        } else {
+          sql += ` AND category = ANY($${paramIdx++})`;
+          params.push(cats);
+        }
       }
 
       if (status) {
@@ -113,6 +140,15 @@ app.get('/api/performances', async (req, res) => {
         sql += ` AND (prfnm ILIKE $${paramIdx} OR fcltynm ILIKE $${paramIdx} OR prfcast ILIKE $${paramIdx})`;
         params.push(`%${search}%`);
         paramIdx++;
+      }
+
+      if (ticketSource) {
+        const sources = ticketSource.split(',');
+        const conditions = sources.map((s) => {
+          params.push(`%${s}%`);
+          return `relates::text ILIKE $${paramIdx++}`;
+        });
+        sql += ` AND (${conditions.join(' OR ')})`;
       }
 
       // 기본: 공연완료 제외
@@ -196,7 +232,7 @@ function serveSampleList(req, res) {
 // Production: 빌드된 React 앱 서빙
 const clientDist = path.join(__dirname, '..', 'ticketmoa-client', 'dist');
 app.use(express.static(clientDist));
-app.get('*', (req, res) => {
+app.get('*path', (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 

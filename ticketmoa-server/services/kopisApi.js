@@ -157,6 +157,17 @@ async function fetchPerformanceDetail(serviceKey, mt20id) {
       : [item.styurls.styurl];
   }
 
+  let relates = [];
+  if (item.relates && item.relates.relate) {
+    const relateItems = Array.isArray(item.relates.relate)
+      ? item.relates.relate
+      : [item.relates.relate];
+    relates = relateItems.map((r) => ({
+      name: extractValue(r.relatenm),
+      url: extractValue(r.relateurl),
+    })).filter((r) => r.name && r.url);
+  }
+
   return {
     mt20id: extractValue(item.mt20id),
     mt10id: extractValue(item.mt10id),
@@ -184,6 +195,7 @@ async function fetchPerformanceDetail(serviceKey, mt20id) {
     festival: extractValue(item.festival),
     dtguidance: extractValue(item.dtguidance),
     styurls,
+    relates,
     area: extractValue(item.area),
     updatedate: extractValue(item.updatedate),
     category: GENRE_NAME_TO_CATEGORY[extractValue(item.genrenm)] || 'etc',

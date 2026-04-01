@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS performances (
   child         VARCHAR(1),
   daehakro      VARCHAR(1),
   festival      VARCHAR(1),
+  relates       JSONB,
   updatedate    TIMESTAMP,
   category      VARCHAR(20),
   status        VARCHAR(20),

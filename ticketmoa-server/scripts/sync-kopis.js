@@ -149,6 +149,7 @@ async function syncDetails() {
           daehakro = $19,
           festival = $20,
           updatedate = $21,
+          relates = $22,
           has_detail = TRUE,
           synced_at = NOW()
         WHERE mt20id = $1`,
@@ -160,6 +161,7 @@ async function syncDetails() {
           detail.styurls, detail.area,
           detail.visit, detail.child, detail.daehakro, detail.festival,
           detail.updatedate || null,
+          JSON.stringify(detail.relates || []),
         ]
       );
 
